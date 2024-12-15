@@ -1,4 +1,4 @@
-#README
+# README
 
 This repository accompanies the following preprint: "Purifying Selection Shapes the Dynamics of P-element Invasion in Drosophila Populations"
 
@@ -9,8 +9,8 @@ This repository contains:
 - trained GPs
 - Jupyter notebooks demonstrating the usage of GPs 
 
-#OVERVIEW
+# OVERVIEW
 
-**data/experimental-evolution/*txt:** 
+**data/experimental-evolution/** 
 Contains the time-resolved P-element CN estimates for the 1st and 2nd wave experimental evolution study. 
 gen = generation; replicate = evolutionary replicate ID, CN = P-element copy number estimate per haploid genome (software used: DeviaTE) 
