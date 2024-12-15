@@ -11,6 +11,7 @@ This repository contains:
 
 # OVERVIEW
 
-**data/experimental-evolution/** 
-Contains the time-resolved P-element CN estimates for the 1st and 2nd wave experimental evolution study. 
-gen = generation; replicate = evolutionary replicate ID, CN = P-element copy number estimate per haploid genome (software used: DeviaTE) 
+- **data/experimental-evolution/**: Contains the time-resolved P-element CN estimates for the 1st and 2nd wave experimental evolution study. 
+gen = generation; replicate = evolutionary replicate ID, CN = P-element copy number estimate per haploid genome (software used: DeviaTE)
+
+- **src/IBM**: Contains individual-based models implemented in SLiM4 simulating P-element invasions in experimental *Drosophila simulans* populations. 
