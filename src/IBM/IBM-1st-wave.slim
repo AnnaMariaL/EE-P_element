@@ -1,0 +1,141 @@
+initialize() { //1st wave: 0.86 P-element CN per haploid genome in generation -
+	if(exists("slimgui")) {
+		defineConstant("P_TRANS", 0.2);			// transposition probability per TE per generation
+		defineConstant("N_PER_LINE", 5);			// number of individuals per isofemale line
+		defineConstant("SEL_ALPHA",0.44);			// distribution of fitness effects: alpha for beta distribution
+		defineConstant("SEL_BETA", 13.07);			// distribution of fitness effects: beta for beta distribution
+		defineConstant("L_PI",   6804000);			// piRNA cluster length per chr [unit = bp]
+		defineConstant("P_HAS_TE", 0.71);		// probability a founder line contains any TE at all
+		defineConstant("ITER", 1); 				//storage of simulations	
+	}
+	
+	defineConstant("TE_INITIAL", 0.86/(P_HAS_TE * 0.5)); // avg # of TEs initially, per line that contains TEs (derived)
+	defineConstant("N_CHR",5); 					// number of chromosomes
+	defineConstant("L_CHR",324e5);					// length per chromosome in bp
+	defineConstant("L", N_CHR*L_CHR);			// genome length (derived)
+	defineConstant("PI_START", L_CHR - L_PI);	// first base position in the piRNA cluster (derived)
+	defineConstant("PI_END", L_CHR - 1);			// last base position in the piRNA cluster (derived)
+	defineConstant("P_IN_PI", L_PI/L_CHR); 	//probability pi RNA cluster insertion (derived) = prop. piRNA/chrom
+	defineConstant("N_FOUNDERS", 200);		// number of founder lines
+	defineConstant("N", N_FOUNDERS * N_PER_LINE);		// population size (derived)
+	defineConstant("S_IN_PI", 0.0);			// selection coefficient of TE in a piRNA cluster
+	defineConstant("H", 0.5);					// dominance coefficient of TE (everywhere)
+	defineConstant("R", 4*1e-8);					// recombination rate
+	
+	defineConstant("TAG_IN_PI", 1);
+	defineConstant("TAG_NOT_IN_PI", 0);
+	
+	initializeSLiMOptions(preventIncidentalSelfing=T); //obligatory outcrossing
+	initializeMutationRate(0.0); //no new mutations
+	initializeMutationType("m2", H, "f", 0.0);	// selection coeffs assigned at runtime
+	
+	m2.convertToSubstitution=F; //track all TE insertions (also fixed ones)
+	initializeGenomicElementType("g1", m2, 1.0); //only TE insertions 
+	initializeGenomicElement(g1, 0, L-1); //N_CHR chromosomes, L_CHR length each; L = L_CHR * N_CHR,
+	rates=rep(c(R,0.5),N_CHR); //linkage equilibrium between them 
+	rates=rates[0:(length(rates)-2)];
+	ends=rep(L_CHR,N_CHR*2);
+	ends=ends*repEach(1:N_CHR,2);
+	ends[seq(0,length(ends)-1,2)]=ends[seq(0,length(ends)-1,2)]-1;
+	ends=ends[0:(length(ends)-2)];
+	initializeRecombinationRate(rates,ends); //constant recombination rate 
+}
+
+1 early() {
+	sim.addSubpop("p1", N);
+	founders = p1.individuals;
+	pi_count = 0;
+	// set up initial TE state
+	for (founderIndex in seqLen(N_FOUNDERS))
+	{
+		if (runif(1) < P_HAS_TE) //if TE present 
+		{
+			startIndex = founderIndex * N_PER_LINE;
+			line = founders[startIndex:(startIndex + N_PER_LINE - 1)]; //subset to infested line 
+			te_count = rpois(n = 1, lambda = TE_INITIAL); //initial TE count over carrier lines: Poisson dist. 
+			
+			if(te_count > 0) {
+				te_in_pi = (rbinom(te_count, 1, P_IN_PI) == 1); //individual TEs in/outside of piRNA cluster
+				te_chrom = sample(seqLen(N_CHR),te_count,replace=T); //sample chromosomes for TE insertion 
+				
+				te_pos = ifelse(te_in_pi, rdunif(te_count, PI_START, PI_END), rdunif(te_count, 0, PI_START - 1)); //sample position for TE insertion 
+				te_pos = te_pos + te_chrom*L_CHR; //adjust for chromosome 
+				
+				te_selcoeff = rbeta(n = te_count, alpha = SEL_ALPHA, beta = SEL_BETA); //sample selection coefficient
+				te_selcoeff = te_selcoeff *(-1); //negative selection
+				te_selcoeff[te_in_pi] = S_IN_PI; //no selection in piRNA clusters
+				te_target = (rbinom(te_count, 1, 0.5) != 0); //sample genome (1st wave= heterozygotes)
+				
+				for(i in seqLen(te_count)){ //add TEs
+					target = te_target[i] ? line.genome1 else line.genome2;
+					te_mut = target.addNewMutation(m2,te_selcoeff[i], te_pos[i]);
+					te_mut.tag = ifelse(te_in_pi[i], TAG_IN_PI, TAG_NOT_IN_PI);
+				}
+			}
+		}
+	}
+}
+
+early () {
+	
+	inds = p1.individuals;
+	n_tes = size(sim.mutationsOfType(m2)); //total number of TE insertions
+	n_cluster = sum(sim.mutationsOfType(m2).tag); //total cluster insertions 
+	
+	avg_tes_per_genome = mean(p1.genomes.countOfMutationsOfType(m2)); //avg. TEs per haplotype
+	
+	if(exists("slimgui"))
+		catn("Tick " + sim.cycle + ", count == " + n_tes + ", avg_num == " + avg_tes_per_genome + ", count cluster == " + n_cluster);
+	
+	if(!exists("slimgui")) {
+		
+		my_line=paste(sim.cycle, n_tes, avg_tes_per_genome, P_TRANS, N_PER_LINE, SEL_ALPHA, SEL_BETA, L_PI, P_HAS_TE, sep="\t");
+		my_header=paste("GEN", "N_TEs", "CN_Hap", "trans_prob", "N_per_line", "sel_alpha", "sel_beta", "l_pi", "p_te" , sep = "\t");
+		filename=paste("Early-CNsim-",ITER,"-", getSeed(), ".txt",sep="");
+		
+		if(sim.cycle==1) writeFile(filename,my_header);
+		writeFile(filename,my_line,append=T);
+	}
+	if(n_tes > 100000 | avg_tes_per_genome > 1000 | n_tes == 0) sim.simulationFinished(); //avoid crashing, stop simulations if TE is lost
+
+}
+
+late() {
+	// TE jumping
+	inds = p1.individuals;
+	
+	for (ind in inds)
+	{
+		all_tes = ind.genomes.mutationsOfType(m2);
+		active_te = (all_tes.tag == TAG_NOT_IN_PI);
+		
+		if (sum(active_te) > 0 & sum(active_te) == length(all_tes)) //if no insertion in piRNA cluster --> active TE
+		{
+			jump_count = rbinom(1, size(all_tes), P_TRANS); //number of TEs that will jump
+			
+			if(jump_count>0){
+				for (i in seqLen(jump_count))
+				{
+					te_chrom = sample(seqLen(N_CHR), 1); //sample chromosome
+					te_pos = rdunif(1, 0, L_CHR - 1); //sample position
+					te_in_pi = (te_pos >= PI_START); //determine if new TE insertion is in piRNA cluster
+					te_pos = te_pos + te_chrom*L_CHR; //adjust position for sampled chromosome 
+					
+					if(te_in_pi) { //determine selection based on insertion site 
+						te_selcoeff = S_IN_PI;
+					} else {
+						te_selcoeff = rbeta(n = 1, alpha = SEL_ALPHA, beta = SEL_BETA); //determine sel. coeff.
+						te_selcoeff = te_selcoeff * (-1);
+					}
+					te_target = sample(ind.genomes, 1);
+					te_mut = te_target.addNewMutation(m2, te_selcoeff, te_pos);
+					te_mut.tag = te_in_pi ? TAG_IN_PI else TAG_NOT_IN_PI;
+				}
+			}
+		}
+	}
+}
+
+120 late() { //stop after 120 generations
+	sim.simulationFinished();
+}
