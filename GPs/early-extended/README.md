@@ -1,0 +1,1 @@
+This directory contains model snapshots (*.pth),training statistics (stats-GP.txt), and predictions for the test data for the GP trained on the extended individual-based P-element invasion model mimicking the 1st wave experiment.
