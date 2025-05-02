@@ -18,6 +18,8 @@ gen = generation; replicate = evolutionary replicate ID, CN = P-element copy num
   
 - **src**
     - **IBM**: Contains individual-based models implemented in SLiM4 simulating P-element invasions in experimental *Drosophila simulans* populations.
+        - IBM-1st/2nd-wave.slim: Individual-based models used for the main analysis (5 model parameters)
+        - IBM-1st/2nd-wave-extended.slim: Extended individual-based models including additional model parameters for the dominance coefficient *h*, and the excision probability *v* for a transposing P-element. 
     - **GPs**: Contains 2 jupyter notebooks demonstrating the usage of Gaussian Processes. Specifically the training of multi-task GPs (*training* directory) and parameter tuning with the trained GPs (*parameter-tuning* directory). For demonstration purposes only — please adjust global variable names and directory structure before attempting to use this code.
 
 - **GPs/**: Contains trained GPs for 1st ("early") and 2nd ("established") wave.
