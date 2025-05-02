@@ -1,6 +1,6 @@
 # README
 
-This repository accompanies the following preprint: "Purifying Selection Shapes the Dynamics of P-element Invasion in Drosophila Populations"
+This repository accompanies the following preprint: **"Purifying Selection Shapes the Dynamics of P-element Invasion in Drosophila Populations"**, available on bioRxiv [HERE](https://www.biorxiv.org/content/10.1101/2024.12.17.628872v2)
 
 This repository contains:
 - time-resolved P-element CN estimates
