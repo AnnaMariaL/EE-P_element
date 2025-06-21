@@ -7,7 +7,11 @@ This repository contains:
 - individual-based simulation models implemented in SLiM4
 - simulation data
 - trained GPs
-- Jupyter notebooks demonstrating the usage of GPs 
+- Jupyter notebooks demonstrating the usage of GPs
+
+## License
+This project is licensed under the GNU General Public License v3.0. See the [LICENSE](./LICENSE) file for details.
+
 
 # OVERVIEW
 
